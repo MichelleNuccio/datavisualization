@@ -1,49 +1,67 @@
 <!DOCTYPE html>
+<!-- Use UTF-8 to display accented letters and other Unicode characters correctly. -->
 <meta charset="utf-8">
 <style>
 
+/* Set the page background, visible through the transparent canvas. */
 body {
-  background: #000dff;
+  background: #ff00ea;
 }
 
 </style>
 <body>
+<!-- Load D3 version 3 for tree layout, transitions, interpolation, and timers. -->
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
+// Read the viewport dimensions once at page load; these values do not track resizing.
 var width = window.innerWidth,
     height = window.innerHeight;
 
+// Encode directions as separate bits: N = 1, S = 2, W = 4, E = 8.
+// Combining these bits stores all open passages for a cell in one number.
 var N = 1 << 0,
     S = 1 << 1,
     W = 1 << 2,
     E = 1 << 3;
 
+// Define the grid spacing in pixels. Adjacent cell centers are cellSize + cellSpacing apart.
 var edgePadding = 20,
     cellSize = 10,
     cellSpacing = 10,
+    // Calculate how many columns and rows fit, rounding down to whole cells.
     cellWidth = Math.floor((width - edgePadding * 2 - cellSpacing) / (cellSize + cellSpacing)),
     cellHeight = Math.floor((height - edgePadding * 2 - cellSpacing) / (cellSize + cellSpacing)),
+    // Center the grid within the viewport and add a half-pixel coordinate offset.
     marginLeft = Math.floor((width - cellWidth * cellSize - (cellWidth + 1) * cellSpacing) / 2) + cellSpacing + cellSize / 2 + .5,
     marginTop = Math.floor((height - cellHeight * cellSize - (cellHeight + 1) * cellSpacing) / 2) + cellSpacing + cellSize / 2 + .5,
-    root = generateTree(cellWidth, cellHeight); // each cell’s edge bits
+    // Generate the maze and organize its cells into a hierarchy.
+    root = generateTree(cellWidth, cellHeight);
 
+// Configure the tree layout inside the margins. Dimensions are reversed because
+// the tree coordinates are swapped later to display the hierarchy horizontally.
 var tree = d3.layout.tree()
     .size([height - 2 * marginTop, width - 2 * marginLeft]);
 
+// Compute node positions and depths, then collect parent-to-child connections.
 var nodes = tree.nodes(root),
     links = tree.links(nodes);
 
+// Add a canvas whose drawing dimensions match the viewport.
 var canvas = d3.select("body").append("canvas")
     .attr("width", width)
     .attr("height", height);
 
+// Obtain the 2D drawing API for lines, circles, and text.
 var context = canvas.node().getContext("2d");
 
+// Move the drawing origin inside the margins and configure black connection lines.
 context.translate(marginLeft, marginTop);
-context.strokeStyle = "#000";
-context.lineWidth = 1.5;
+context.strokeStyle = "#ffffff";
+context.lineWidth = 0.75;
 
+// Convert a cell index to maze coordinates, mirroring the columns horizontally.
+// The remainder (%) finds the column; division followed by | 0 finds the integer row.
 function mazePosition(d) {
   var i = d.index;
   return [
@@ -52,47 +70,66 @@ function mazePosition(d) {
   ];
 }
 
+// Initialize each node in the maze layout. Properties [0] and [1] store the
+// animated position, while x and y retain the tree coordinates computed by D3.
 nodes.forEach(function(d) {
   var p = mazePosition(d);
   d[0] = p[0];
   d[1] = p[1];
 });
 
+// Place connections with the deepest parents first. Their targets move last,
+// so the first connection is also used below to check animation completion.
 links.sort(function(a, b) {
   return b.source.depth - a.source.depth;
 });
 
+// Use the root as Start, a deepest node as Finish, and leaves as dead ends.
+// Depth measures the number of connections from the root, not screen distance.
 var startNode = nodes[0],
     finishNode = nodes.reduce(function(a, b) { return b.depth > a.depth ? b : a; }, nodes[0]),
     deadEnds = nodes.filter(function(d) { return !d.children || d.children.length === 0; });
 
+// Begin by moving toward the tree layout; reverse direction after each cycle.
 var toTree = true;
 animate();
 
+// Schedule one animation cycle and redraw the moving nodes and connections.
 function animate() {
+  // Animate node objects for 600 ms after a 1-second pause plus 50 ms per depth
+  // level. Quadratic easing gradually accelerates and slows the movement.
   d3.selectAll(nodes).transition()
       .duration(600)
       .delay(function() { return 1000 + this.depth * 50; })
       .ease("quad-in-out")
+      // Choose the destination and interpolate from the current coordinates.
+      // Swap tree x/y coordinates to orient the tree horizontally.
       .tween("position", function() {
         var d = this,
             target = toTree ? [d.y, d.x] : mazePosition(d),
             i = d3.interpolate([d[0], d[1]], target);
+        // As t advances from 0 to 1, save the intermediate position for drawing.
         return function(t) { var p = i(t); d[0] = p[0]; d[1] = p[1]; };
       });
 
+  // Redraw repeatedly while the transitions update node positions.
   d3.timer(function() {
+    // Temporarily reset the transform to clear the entire canvas, then restore margins.
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, width, height);
     context.restore();
     context.beginPath();
+    // Add a segment for every connection. These lines represent passages, not walls.
     links.forEach(function(d) {
       context.moveTo(d.source[0], d.source[1]);
       context.lineTo(d.target[0], d.target[1]);
     });
+    // Render all prepared segments using the configured line color and width.
     context.stroke();
 
+    // Mark each leaf with a filled black circle of radius 2.5 pixels.
+    // An arc from 0 to 2 * Math.PI draws a complete circle.
     context.fillStyle = "#000";
     deadEnds.forEach(function(d) {
       context.beginPath();
@@ -100,19 +137,24 @@ function animate() {
       context.fill();
     });
 
+    // Configure small labels centered horizontally on their nodes.
     context.font = "10px sans-serif";
     context.textAlign = "center";
 
     context.beginPath();
+    // Draw a larger start marker and place its label 8 pixels above its center.
     context.arc(startNode[0], startNode[1], 4, 0, 2 * Math.PI);
     context.fill();
     context.fillText("Start", startNode[0], startNode[1] - 8);
 
     context.beginPath();
+    // Draw the finish marker and its label using the same styling.
     context.arc(finishNode[0], finishNode[1], 4, 0, 2 * Math.PI);
     context.fill();
     context.fillText("Finish", finishNode[0], finishNode[1] - 8);
 
+    // Inspect D3 v3 internal transition state on a last-moving node. Once it
+    // finishes, reverse direction and start again; returning true stops this timer.
     if (!links[0].target.__transition__) {
       toTree = !toTree;
       animate();
@@ -121,7 +163,10 @@ function animate() {
   });
 }
 
+// Convert maze passages into parent/child objects using depth-first traversal.
+// Here width and height count columns and rows, rather than pixels.
 function generateTree(width, height) {
+  // Prepare passage data, visitation flags, and a stack of nodes to explore.
   var cells = generateMaze(width, height), // each cell’s edge bits
       visited = d3.range(width * height).map(function() { return false; }),
       root = {index: cells.length - 1, children: []},
@@ -131,33 +176,51 @@ function generateTree(width, height) {
       childIndex,
       cell;
 
+  // Explore the most recently added node until the stack is empty.
+  // The root starts unmarked, so the existing code can add it again as a child.
   while ((parent = frontier.pop()) != null) {
     cell = cells[parent.index];
+    // For each open passage, mark the neighbor visited, attach a child, and queue it.
+    // Bitwise & checks passage bits. East is the next index in the row.
     if (cell & E && !visited[childIndex = parent.index + 1]) visited[childIndex] = true, child = {index: childIndex, children: []}, parent.children.push(child), frontier.push(child);
+    // West is the previous index in the row.
     if (cell & W && !visited[childIndex = parent.index - 1]) visited[childIndex] = true, child = {index: childIndex, children: []}, parent.children.push(child), frontier.push(child);
+    // South is one row ahead: add the number of columns.
     if (cell & S && !visited[childIndex = parent.index + width]) visited[childIndex] = true, child = {index: childIndex, children: []}, parent.children.push(child), frontier.push(child);
+    // North is one row behind: subtract the number of columns.
     if (cell & N && !visited[childIndex = parent.index - width]) visited[childIndex] = true, child = {index: childIndex, children: []}, parent.children.push(child), frontier.push(child);
   }
 
+  // Return the hierarchy for D3 to lay out.
   return root;
 }
 
+// Build a connected maze by repeatedly adding random paths with loops removed.
 function generateMaze(width, height) {
+  // cells stores passage bits; remaining lists candidate starting cells;
+  // previous records predecessor indices in the current random walk.
+  // Array entries begin undefined, indicating cells or steps not yet recorded.
   var cells = new Array(width * height), // each cell’s edge bits
       remaining = d3.range(width * height), // cell indexes to visit
       previous = new Array(width * height); // current random walk
 
   // Add the starting cell.
   var start = remaining.pop();
+  // Zero marks this cell as part of the maze, with no open passages yet.
   cells[start] = 0;
 
   // While there are remaining cells,
   // add a loop-erased random walk to the maze.
+  // The empty loop body is intentional: each call performs the work.
+  // Stop when the function returns true because no starting cells remain.
   while (!loopErasedRandomWalk());
 
+  // Return one passage-bit value per cell.
   return cells;
 
+  // Walk from an unused cell until reaching the existing maze, erasing loops.
   function loopErasedRandomWalk() {
+    // Track current/next cell indices and the current column/row.
     var i0,
         i1,
         x0,
@@ -168,12 +231,15 @@ function generateMaze(width, height) {
     while (cells[i0] >= 0);
 
     // Perform a random walk starting at this location,
+    // A self-reference marks the beginning of the path for later backtracking.
     previous[i0] = i0;
     while (true) {
+      // Convert the current index to grid coordinates for boundary checks.
       x0 = i0 % width;
       y0 = i0 / width | 0;
 
       // picking a legal random direction at each step.
+      // Choose 0, 1, 2, or 3. Retry if the chosen move would leave the grid.
       i1 = Math.random() * 4 | 0;
       if (i1 === 0) { if (y0 <= 0) continue; --y0, i1 = i0 - width; }
       else if (i1 === 1) { if (y0 >= height - 1) continue; ++y0, i1 = i0 + width; }
@@ -193,24 +259,32 @@ function generateMaze(width, height) {
         // Add the random walk to the maze by backtracking to the starting cell.
         // Also erase this walk’s history to not interfere with subsequent walks.
         while ((i0 = previous[i1]) !== i1) {
+          // Open matching passages in both cells. Bitwise |= adds a direction
+          // without removing existing openings: east/west or south/north.
           if (i1 === i0 + 1) cells[i0] |= E, cells[i1] |= W;
           else if (i1 === i0 - 1) cells[i0] |= W, cells[i1] |= E;
           else if (i1 === i0 + width) cells[i0] |= S, cells[i1] |= N;
           else cells[i0] |= N, cells[i1] |= S;
+          // Clear the recorded step and move backward along the path.
           previous[i1] = NaN;
           i1 = i0;
         }
 
+        // Clear the starting marker too; this walk is now fully integrated.
         previous[i1] = NaN;
         return;
       }
 
+      // Continue walking from the chosen neighbor if the maze has not been reached.
       i0 = i1;
     }
   }
 
+  // Remove a loop by walking backward from i0 to the previously visited cell i2.
+  // NaN clears each predecessor entry because NaN >= 0 evaluates to false.
   function eraseWalk(i0, i2) {
     var i1;
+    // Save the predecessor, clear this step, and repeat until the loop is removed.
     do i1 = previous[i0], previous[i0] = NaN, i0 = i1; while (i1 !== i2);
   }
 }
