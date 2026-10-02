@@ -49,7 +49,7 @@ const dataSubAfrica = dataYear.filter(function(d) {
 const width = 821;
 const height = 288;
 
-// creation of svg
+// creation of svg: Scalable Vector Graphics
 const svg = d3.select("#chart")
   .append("svg")
   .attr("width", width)
@@ -57,6 +57,8 @@ const svg = d3.select("#chart")
   .style("font-family", "Lato, sans-serif")
   .style("font-size", "16px");
 
+// The values selected come from the inspection of the original diagram
+// they could also be 0, 300 and 0, 50 - i think
 const x = d3.scaleLinear()
   .domain([2005, 2025])
   .range([40, width - 260]);
@@ -130,7 +132,8 @@ const palette = {
 
 // ---------Instruction to create the line chart---------
 
-// How to connect the points
+// How to connect the points - take the x and y coordinates from the data and create a line path
+// x -> year | y -> usage
 const line = d3.line()
   .x(function(d) {
     return x(d.year);
@@ -223,49 +226,55 @@ svg.append("path")
 
 //---------Dots for each line---------
 
+// creation of tooltip for the dots
 const tooltip = d3.select("body")
   .append("div")
   .style("position", "fixed")
-  .style("display", "none")
+  .style("display", "none") // initially hide the tooltip
   .style("pointer-events", "none")
   .style("background", "white")
   .style("border", "1px solid #ccc")
-  .style("padding", "10px")
+  .style("padding", "10px") // space between border and text
   .style("border-radius", "4px")
   .style("font-family", "Lato, sans-serif")
   .style("font-size", "13px")
-  .style("white-space", "pre-line")
-  .style("z-index", "1000");
+  .style("white-space", "pre-line") // allow line breaks in the tooltip text
+  .style("z-index", "1000"); // ensure the tooltip is on top of other elements
 
 function drawDots(dataset, color) {
-  const dots = svg.append("g")
+  const dots = svg.append("g") // creation of a group for the dots
     .selectAll("circle")
-    .data(dataset)
+    .data(dataset) // join the dataset to the dots
     .join("circle")
+
+    // set the position and size of the dots based on the data
     .attr("cx", function(d) {
       return x(d.year);
     })
     .attr("cy", function(d) {
       return y(d.usage);
     })
+
+    // set the radius and fill color of the dots
     .attr("r", 2)
     .attr("fill", color);
   
   //mouse hover effect for the dots
   dots
     .on("mouseenter", function(event, d) {
-      svg.selectAll("path, circle, text, line")
-        .style("opacity", 0.25);
+      svg.selectAll("path, circle, text, line") // dim all other elements
+        .style("opacity", 0.25); // dim all other elements when a dot is hovered
 
-      d3.select(this)
-        .style("opacity", 1)
-        .attr("r", 6)
-        .raise();
+      d3.select(this) // highlight the hovered dot
+        .style("opacity", 1) // make the hovered dot fully visible
+        .attr("r", 6) // increase the size of the hovered dot
+        .raise(); // bring the hovered dot to the front
 
       tooltip
-        .style("display", "block")
+        .style("display", "block") // show the tooltip when a dot is hovered
         .style("left", (event.clientX + 15) + "px")
         .style("top", (event.clientY + 15) + "px")
+        // position the tooltip near the cursor
         .text(
           d.Entity + "\n" +
           "Year: " + d.year + "\n" +
