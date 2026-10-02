@@ -1,0 +1,1 @@
+link for the graphical reference: https://ourworldindata.org/grapher/share-of-individuals-using-the-internet?tab=line
