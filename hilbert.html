@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Set character encoding and responsive scaling -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapping IPv4 allocations</title>
+
+  <!-- Load Roboto Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Load the stylesheet and visualization code -->
+  <link rel="stylesheet" href="./hilbert.css">
+  <script src="./hilbert.js" defer></script>
+</head>
+
+<body>
+  <main class="atlas">
+
+    <!-- Display the complete square map -->
+    <section class="map-area" aria-label="IPv4 address space">
+      <canvas
+        id="hilbert-map"
+        width="1024"
+        height="1024"
+        aria-label="Hilbert map of IPv4 allocations by registry"
+        aria-describedby="map-description"
+      >
+        This visualization requires JavaScript and canvas support.
+      </canvas>
+    </section>
+
+    <!-- Keep information and controls beside the map -->
+    <aside class="sidebar">
+
+      <!-- Introduce the exploration question -->
+      <header>
+        <h1>Mapping IPv4 allocations</h1>
+        <p>
+          How are registered IPv4 address blocks distributed
+          across the five Regional Internet Registries?
+        </p>
+      </header>
+
+      <!-- Highlight cells containing the selected registry -->
+      <section class="controls" aria-label="Map controls">
+        <label for="registry-filter">Highlight a registry</label>
+
+        <select id="registry-filter" disabled>
+          <option value="all">All registries</option>
+          <option value="afrinic">AFRINIC</option>
+          <option value="apnic">APNIC</option>
+          <option value="arin">ARIN</option>
+          <option value="lacnic">LACNIC</option>
+          <option value="ripencc">RIPE NCC</option>
+        </select>
+      </section>
+
+      <!-- Match registry names to the map colors -->
+      <section class="legend" aria-labelledby="legend-title">
+        <h2 id="legend-title">Registry colors</h2>
+
+        <ul>
+          <li>
+            <span class="swatch afrinic" aria-hidden="true"></span>
+            AFRINIC
+          </li>
+          <li>
+            <span class="swatch apnic" aria-hidden="true"></span>
+            APNIC
+          </li>
+          <li>
+            <span class="swatch arin" aria-hidden="true"></span>
+            ARIN
+          </li>
+          <li>
+            <span class="swatch lacnic" aria-hidden="true"></span>
+            LACNIC
+          </li>
+          <li>
+            <span class="swatch ripencc" aria-hidden="true"></span>
+            RIPE NCC
+          </li>
+          <li>
+            <span class="swatch no-data" aria-hidden="true"></span>
+            No qualifying record
+          </li>
+        </ul>
+      </section>
+
+      <!-- Show the inspected cell's address range and counts -->
+      <section class="details" aria-labelledby="details-title">
+        <h2 id="details-title">Cell details</h2>
+        <p id="cell-details">Hover over or tap a cell to inspect it.</p>
+      </section>
+
+      <!-- Explain the layout and aggregation -->
+      <section aria-labelledby="reading-title">
+        <h2 id="reading-title">How to read</h2>
+        <p id="map-description">
+          256 × 256 cells · 65,536 addresses per /16 cell.
+          Position follows numerical address order, not geography.
+          Color indicates the registry with the most addresses
+          in a cell. Black means no qualifying record,
+          not necessarily unused space.
+        </p>
+      </section>
+
+      <!-- Report loading progress or errors -->
+      <p id="map-status" role="status">Loading map…</p>
+
+      <!-- Cite the datasets and explain their scope -->
+      <footer>
+        <p>
+          Sources:
+          <a href="https://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-latest">AFRINIC</a>,
+          <a href="https://ftp.apnic.net/stats/apnic/delegated-apnic-latest">APNIC</a>,
+          <a href="https://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest">ARIN</a>,
+          <a href="https://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest">LACNIC</a>,
+          <a href="https://ftp.ripe.net/pub/stats/ripencc/delegated-ripencc-latest">RIPE NCC</a>.
+        </p>
+        <p>
+          Snapshots: October 8–10, 2026. Source links provide
+          the latest versions. Allocated/assigned IPv4 records only.
+          Registration does not imply activity or physical location.
+        </p>
+      </footer>
+
+    </aside>
+  </main>
+</body>
+</html>

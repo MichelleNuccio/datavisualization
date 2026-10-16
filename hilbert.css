@@ -1,0 +1,207 @@
+/* Include padding and borders in element dimensions */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent the page itself from scrolling */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Apply the black background and compact typography */
+body {
+  background: #000000;
+  color: #eeeeee;
+  font-family: "Roboto Mono", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Divide the viewport between the map and the sidebar */
+.atlas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding: 16px;
+}
+
+/* Measure the available area and center the square map */
+.map-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+}
+
+/* Fit the entire diagram without stretching or cropping */
+#hilbert-map {
+  display: block;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+  border: 1px solid #333333;
+  background: #000000;
+  image-rendering: pixelated;
+}
+
+/* Allow only the sidebar to scroll when space is limited */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #444444 #000000;
+}
+
+/* Keep the title compact */
+h1 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* Distinguish section headings from explanatory text */
+h2 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Use muted text for descriptions */
+p {
+  margin: 0;
+  color: #aaaaaa;
+}
+
+/* Stack the selector below its label */
+.controls {
+  display: grid;
+  gap: 6px;
+}
+
+select {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid #444444;
+  border-radius: 0;
+  background: #000000;
+  color: #eeeeee;
+  font: inherit;
+}
+
+/* Arrange the legend in two columns */
+.legend ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Draw the legend color samples */
+.swatch {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border: 1px solid #555555;
+}
+
+/* Preserve the selected registry palette */
+.afrinic {
+  background: #ffff00;
+}
+
+.apnic {
+  background: #0000ff;
+}
+
+.arin {
+  background: #00ffff;
+}
+
+.lacnic {
+  background: #00ff00;
+}
+
+.ripencc {
+  background: #ff00ff;
+}
+
+.no-data {
+  background: #000000;
+}
+
+/* Separate the cell details from surrounding sections */
+.details {
+  padding: 12px 0;
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+}
+
+/* Preserve the line breaks inserted by JavaScript */
+#cell-details {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: #dddddd;
+}
+
+/* Keep status messages visible */
+#map-status {
+  color: #dddddd;
+  overflow-wrap: anywhere;
+}
+
+/* Push the source notes toward the bottom when space permits */
+footer {
+  margin-top: auto;
+  font-size: 10px;
+}
+
+footer p + p {
+  margin-top: 8px;
+}
+
+/* Style links and keyboard focus */
+a {
+  color: #cccccc;
+  text-underline-offset: 3px;
+}
+
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Stack the map and sidebar on narrow screens */
+@media (max-width: 700px) {
+  .atlas {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .sidebar {
+    gap: 12px;
+  }
+}
